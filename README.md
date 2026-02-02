@@ -1,3 +1,22 @@
+```
+██╗  ██╗███╗   ██╗ ██████╗ ███████╗████████╗██╗ ██████╗
+██║ ██╔╝████╗  ██║██╔═══██╗██╔════╝╚══██╔══╝██║██╔════╝
+█████╔╝ ██╔██╗ ██║██║   ██║███████╗   ██║   ██║██║     
+██╔═██╗ ██║╚██╗██║██║   ██║╚════██║   ██║   ██║██║     
+██║  ██╗██║ ╚████║╚██████╔╝███████║   ██║   ██║╚██████╗
+╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝ ╚═════╝
+```
+
+# OpenClaw Telemetry Plugin
+
+**By [Knostic](https://knostic.ai/)**
+
+> **Observability for OpenClaw.** Capture every tool call, LLM request, and agent session — with built-in redaction, tamper-proof hash chains, syslog/SIEM forwarding, and rate limiting. Drop it in and know exactly what your agents are doing.
+
+> **Like the tool?** Check out how Knostic helps you with visibility and control of your coding agents and MCP/extensions, from Cursor and Claude Code, to Copilot.
+
+---
+
 # OpenClaw Telemetry Plugin
 
 Captures tool calls, LLM usage, agent lifecycle, and message events. Outputs to JSONL file and optionally to syslog for SIEM integration.
@@ -287,3 +306,7 @@ The syslog output connects directly to:
 - ArcSight (CEF supported natively)
 - Elastic SIEM (via Logstash syslog input)
 - Any RFC 5424 compliant collector
+
+- ## License
+
+Apache 2.0 — see LICENSE for details.
