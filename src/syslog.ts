@@ -184,48 +184,33 @@ export function createSyslogWriter(config: SyslogConfig): SyslogWriter {
   };
 
   const connect = () => {
-    if (connecting || connected) {
-      return;
-    }
+    if (connecting || connected) return;
     connecting = true;
 
     if (protocol === "udp") {
       socket = dgram.createSocket("udp4");
       connected = true;
       connecting = false;
-    } else if (protocol === "tcp") {
-      socket = net.createConnection({ host: config.host, port }, () => {
-        connected = true;
-        connecting = false;
-        for (const msg of queue) {
-          send(msg);
-        }
-        queue.length = 0;
-      });
-      socket.on("error", () => {
-        connected = false;
-        connecting = false;
-      });
-      socket.on("close", () => {
-        connected = false;
-      });
-    } else if (protocol === "tcp-tls") {
-      socket = tls.connect({ host: config.host, port }, () => {
-        connected = true;
-        connecting = false;
-        for (const msg of queue) {
-          send(msg);
-        }
-        queue.length = 0;
-      });
-      socket.on("error", () => {
-        connected = false;
-        connecting = false;
-      });
-      socket.on("close", () => {
-        connected = false;
-      });
+      return;
     }
+
+    const onConnect = () => {
+      connected = true;
+      connecting = false;
+      queue.forEach((msg) => send(msg));
+      queue.length = 0;
+    };
+    const onError = () => {
+      connected = false;
+      connecting = false;
+    };
+
+    socket =
+      protocol === "tcp"
+        ? net.createConnection({ host: config.host, port }, onConnect)
+        : tls.connect({ host: config.host, port }, onConnect);
+    socket.on("error", onError);
+    socket.on("close", () => (connected = false));
   };
 
   connect();
@@ -237,18 +222,11 @@ export function createSyslogWriter(config: SyslogConfig): SyslogWriter {
       send(data);
     },
     async close() {
+      if (!socket) return;
       return new Promise<void>((resolve) => {
-        if (!socket) {
-          resolve();
-          return;
-        }
-        if (protocol === "udp" && socket instanceof dgram.Socket) {
-          socket.close(() => resolve());
-        } else if (socket instanceof net.Socket || socket instanceof tls.TLSSocket) {
-          socket.end(() => resolve());
-        } else {
-          resolve();
-        }
+        if (socket instanceof dgram.Socket) socket.close(() => resolve());
+        else if (socket instanceof net.Socket) socket.end(() => resolve());
+        else resolve();
       });
     },
   };

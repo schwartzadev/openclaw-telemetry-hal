@@ -14,16 +14,11 @@ export function createRateLimiter(config: RateLimitConfig = {}) {
   let lastRefill = Date.now();
   let droppedCount = 0;
 
-  function refill() {
-    const now = Date.now();
-    const elapsed = (now - lastRefill) / 1000;
-    tokens = Math.min(burst, tokens + elapsed * rate);
-    lastRefill = now;
-  }
-
   return {
     allow(): boolean {
-      refill();
+      const now = Date.now();
+      tokens = Math.min(burst, tokens + ((now - lastRefill) / 1000) * rate);
+      lastRefill = now;
       if (tokens >= 1) {
         tokens--;
         return true;
@@ -31,8 +26,6 @@ export function createRateLimiter(config: RateLimitConfig = {}) {
       droppedCount++;
       return false;
     },
-    dropped(): number {
-      return droppedCount;
-    },
+    dropped: () => droppedCount,
   };
 }

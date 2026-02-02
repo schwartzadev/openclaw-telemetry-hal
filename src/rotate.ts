@@ -44,39 +44,25 @@ export function createRotatingWriter(filePath: string, config: RotateConfig = {}
     const ext = compress ? ".gz" : "";
 
     for (let i = maxFiles - 1; i >= 1; i--) {
-      const oldPath = join(dir, `${base}.${i}${ext}`);
-      const newPath = join(dir, `${base}.${i + 1}${ext}`);
       try {
-        await rename(oldPath, newPath);
-      } catch {
-        // File doesn't exist, skip
-      }
+        await rename(join(dir, `${base}.${i}${ext}`), join(dir, `${base}.${i + 1}${ext}`));
+      } catch {}
     }
 
     if (maxFiles >= 1) {
       const rotatedPath = join(dir, `${base}.1`);
       await rename(filePath, rotatedPath);
-      if (compress) {
-        await compressFile(rotatedPath, rotatedPath + ".gz");
-      }
+      if (compress) await compressFile(rotatedPath, rotatedPath + ".gz");
     }
 
-    await cleanupOldFiles(dir, base, ext);
-  }
-
-  async function cleanupOldFiles(dir: string, base: string, ext: string): Promise<void> {
     try {
       const files = await readdir(dir);
       const pattern = new RegExp(`^${base.replace(/\./g, "\\.")}\\.(\\d+)${ext.replace(/\./g, "\\.")}$`);
       for (const f of files) {
         const match = f.match(pattern);
-        if (match && parseInt(match[1], 10) > maxFiles) {
-          await unlink(join(dir, f));
-        }
+        if (match && parseInt(match[1], 10) > maxFiles) await unlink(join(dir, f));
       }
-    } catch {
-      // Directory read failed, skip cleanup
-    }
+    } catch {}
   }
 
   return {

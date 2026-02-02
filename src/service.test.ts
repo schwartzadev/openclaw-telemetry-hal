@@ -62,7 +62,7 @@ describe("TelemetryService", () => {
     expect(end.type).toBe("tool.end");
     expect(end.success).toBe(true);
 
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("telemetry: writing to"));
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("telemetry:"));
   });
 
   test("uses default path when filePath not specified", async () => {

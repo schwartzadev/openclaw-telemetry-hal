@@ -31,27 +31,15 @@ export function createRedactor(config: RedactConfig = {}) {
   const patterns = compilePatterns(config.patterns ?? DEFAULT_PATTERNS);
   const replacement = config.replacement ?? DEFAULT_REPLACEMENT;
 
-  function redactString(s: string): string {
-    let result = s;
-    for (const p of patterns) {
-      result = result.replace(p, replacement);
-    }
-    return result;
-  }
-
   function redactValue(v: unknown): unknown {
     if (typeof v === "string") {
-      return redactString(v);
+      return patterns.reduce((s, p) => s.replace(p, replacement), v);
     }
     if (Array.isArray(v)) {
       return v.map(redactValue);
     }
     if (v !== null && typeof v === "object") {
-      const out: Record<string, unknown> = {};
-      for (const [k, val] of Object.entries(v)) {
-        out[k] = redactValue(val);
-      }
-      return out;
+      return Object.fromEntries(Object.entries(v).map(([k, val]) => [k, redactValue(val)]));
     }
     return v;
   }

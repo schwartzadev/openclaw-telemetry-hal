@@ -14,16 +14,12 @@ export function createTelemetryWriter(filePath: string, rotateConfig?: RotateCon
   const rotator = createRotatingWriter(filePath, rotateConfig ?? {});
 
   const doFlush = async () => {
-    if (flushing || queue.length === 0) {
-      return;
-    }
+    if (flushing || queue.length === 0) return;
     flushing = true;
     const batch = queue;
     queue = [];
     try {
-      if (rotator.shouldRotate()) {
-        await rotator.rotate();
-      }
+      if (rotator.shouldRotate()) await rotator.rotate();
       await mkdir(dirname(filePath), { recursive: true });
       const data = batch.join("");
       await appendFile(filePath, data);
@@ -31,9 +27,7 @@ export function createTelemetryWriter(filePath: string, rotateConfig?: RotateCon
     } finally {
       flushing = false;
     }
-    if (queue.length > 0) {
-      void doFlush();
-    }
+    if (queue.length > 0) void doFlush();
   };
 
   void rotator.init();

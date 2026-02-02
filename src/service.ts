@@ -47,35 +47,24 @@ export function createTelemetryService(): TelemetryService {
 
       const filePath = cfg.filePath ?? `${ctx.stateDir}/logs/telemetry.jsonl`;
       fileWriter = createTelemetryWriter(filePath, cfg.rotate);
-      ctx.logger.info(`telemetry: writing to ${filePath}`);
+      ctx.logger.info(`telemetry: ${filePath}`);
 
-      if (cfg.rotate?.enabled) {
-        const maxMB = (cfg.rotate.maxSizeBytes ?? 10 * 1024 * 1024) / 1024 / 1024;
-        ctx.logger.info(`telemetry: rotation enabled (max ${maxMB}MB, keep ${cfg.rotate.maxFiles ?? 5} files)`);
-      }
-
+      if (cfg.rotate?.enabled) ctx.logger.info("telemetry: rotation enabled");
       if (cfg.redact?.enabled) {
         redactor = createRedactor(cfg.redact);
         ctx.logger.info("telemetry: redaction enabled");
       }
-
       if (cfg.integrity?.enabled) {
         integrity = createIntegrityChain(cfg.integrity);
-        ctx.logger.info(`telemetry: integrity chain enabled (${cfg.integrity.algorithm ?? "sha256"})`);
+        ctx.logger.info("telemetry: integrity enabled");
       }
-
       if (cfg.rateLimit?.enabled) {
         rateLimiter = createRateLimiter(cfg.rateLimit);
-        ctx.logger.info(
-          `telemetry: rate limiting enabled (${cfg.rateLimit.maxEventsPerSecond ?? 100}/s, burst ${cfg.rateLimit.burstSize ?? 200})`,
-        );
+        ctx.logger.info("telemetry: rate limiting enabled");
       }
-
       if (cfg.syslog?.enabled && cfg.syslog.host) {
         syslogWriter = createSyslogWriter(cfg.syslog);
-        ctx.logger.info(
-          `telemetry: syslog enabled (${cfg.syslog.protocol ?? "udp"}://${cfg.syslog.host}:${cfg.syslog.port ?? 514})`,
-        );
+        ctx.logger.info(`telemetry: syslog -> ${cfg.syslog.host}:${cfg.syslog.port ?? 514}`);
       }
 
       unsubDiag = onDiagnosticEvent((evt) => {
