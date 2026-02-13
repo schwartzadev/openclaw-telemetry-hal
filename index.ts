@@ -36,7 +36,19 @@ export default {
         type: "message.in",
         channel: ctx.channelId,
         from: evt.from,
-        contentLength: evt.content.length,
+        content: evt.content,
+        contentLength: evt.content?.length,
+        timestamp: evt.timestamp,
+        metadata: evt.metadata,
+      });
+    });
+
+    api.on("message_sending", (evt, ctx) => {
+      svc.write({
+        type: "message.sending",
+        channel: ctx.channelId,
+        to: evt.to,
+        content: evt.content,
       });
     });
 
@@ -45,6 +57,7 @@ export default {
         type: "message.out",
         channel: ctx.channelId,
         to: evt.to,
+        content: evt.content,
         success: evt.success,
         error: evt.error,
       });
@@ -55,7 +68,9 @@ export default {
         type: "agent.start",
         sessionKey: ctx.sessionKey,
         agentId: ctx.agentId,
-        promptLength: evt.prompt.length,
+        prompt: evt.prompt,
+        promptLength: evt.prompt?.length,
+        messages: evt.messages,
       });
     });
 
@@ -64,6 +79,7 @@ export default {
         type: "agent.end",
         sessionKey: ctx.sessionKey,
         agentId: ctx.agentId,
+        messages: evt.messages,
         success: evt.success,
         durationMs: evt.durationMs,
         error: evt.error,
