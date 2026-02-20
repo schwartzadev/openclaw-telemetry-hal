@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/telemetry",
+  "name": "@openclaw/telemetry-hal",
   "version": "0.1.0",
   "description": "HAL-modified OpenClaw telemetry plugin - captures tool calls, LLM usage, and message events to JSONL",
   "type": "module",
