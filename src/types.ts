@@ -14,6 +14,8 @@ export type TelemetryToolStartEvent = TelemetryEventBase & {
 export type TelemetryToolEndEvent = TelemetryEventBase & {
   type: "tool.end";
   toolName: string;
+  params?: Record<string, unknown>;
+  result?: unknown;
   durationMs?: number;
   success: boolean;
   error?: string;
@@ -23,13 +25,24 @@ export type TelemetryMessageInEvent = TelemetryEventBase & {
   type: "message.in";
   channel: string;
   from: string;
+  content?: string;
   contentLength: number;
+  timestamp?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type TelemetryMessageSendingEvent = TelemetryEventBase & {
+  type: "message.sending";
+  channel: string;
+  to: string;
+  content?: string;
 };
 
 export type TelemetryMessageOutEvent = TelemetryEventBase & {
   type: "message.out";
   channel: string;
   to: string;
+  content?: string;
   success: boolean;
   error?: string;
 };
@@ -47,24 +60,43 @@ export type TelemetryLlmUsageEvent = TelemetryEventBase & {
 
 export type TelemetryAgentStartEvent = TelemetryEventBase & {
   type: "agent.start";
+  prompt?: string;
   promptLength: number;
+  messageCount?: number;
 };
 
 export type TelemetryAgentEndEvent = TelemetryEventBase & {
   type: "agent.end";
   success: boolean;
   durationMs?: number;
+  messageCount?: number;
   error?: string;
+};
+
+export type TelemetrySessionStartEvent = TelemetryEventBase & {
+  type: "session.start";
+  sessionId: string;
+  resumedFrom?: string;
+};
+
+export type TelemetrySessionEndEvent = TelemetryEventBase & {
+  type: "session.end";
+  sessionId: string;
+  messageCount?: number;
+  durationMs?: number;
 };
 
 export type TelemetryEvent =
   | TelemetryToolStartEvent
   | TelemetryToolEndEvent
   | TelemetryMessageInEvent
+  | TelemetryMessageSendingEvent
   | TelemetryMessageOutEvent
   | TelemetryLlmUsageEvent
   | TelemetryAgentStartEvent
-  | TelemetryAgentEndEvent;
+  | TelemetryAgentEndEvent
+  | TelemetrySessionStartEvent
+  | TelemetrySessionEndEvent;
 
 export type TelemetryEventInput = TelemetryEvent extends infer E
   ? E extends TelemetryEvent
