@@ -4,7 +4,11 @@ import { createIntegrityChain } from "./integrity.js";
 import { createRateLimiter } from "./ratelimit.js";
 import { createRedactor } from "./redact.js";
 import { createSyslogWriter, type SyslogWriter } from "./syslog.js";
-import type { TelemetryConfig, TelemetryEvent, TelemetryEventInput } from "./types.js";
+import type {
+  TelemetryConfig,
+  TelemetryEvent,
+  TelemetryEventInput,
+} from "./types.js";
 import { createTelemetryWriter, type TelemetryWriter } from "./writer.js";
 
 export type TelemetryService = OpenClawPluginService & {
@@ -37,10 +41,12 @@ export function createTelemetryService(): TelemetryService {
   };
 
   return {
-    id: "telemetry",
+    id: "telemetry-hal",
     write: writeEvent,
     async start(ctx) {
-      const cfg = ctx.config.plugins?.entries?.telemetry?.config as TelemetryConfig | undefined;
+      const cfg = ctx.config.plugins?.entries?.telemetry?.config as
+        | TelemetryConfig
+        | undefined;
       if (!cfg?.enabled) {
         return;
       }
@@ -64,7 +70,9 @@ export function createTelemetryService(): TelemetryService {
       }
       if (cfg.syslog?.enabled && cfg.syslog.host) {
         syslogWriter = createSyslogWriter(cfg.syslog);
-        ctx.logger.info(`telemetry: syslog -> ${cfg.syslog.host}:${cfg.syslog.port ?? 514}`);
+        ctx.logger.info(
+          `telemetry: syslog -> ${cfg.syslog.host}:${cfg.syslog.port ?? 514}`,
+        );
       }
 
       unsubDiag = onDiagnosticEvent((evt) => {
