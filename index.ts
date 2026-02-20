@@ -2,8 +2,8 @@ import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { createTelemetryService } from "./src/service.js";
 
 export default {
-  id: "telemetry",
-  name: "OpenClaw Telemetry",
+  id: "telemetry-hal",
+  name: "OpenClaw Telemetry for HAL",
   description: "Captures tool calls, LLM usage, and message events to JSONL",
   register(api: OpenClawPluginApi) {
     const svc = createTelemetryService();

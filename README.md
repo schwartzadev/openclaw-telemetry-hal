@@ -1,12 +1,3 @@
-```
-██╗  ██╗███╗   ██╗ ██████╗ ███████╗████████╗██╗ ██████╗
-██║ ██╔╝████╗  ██║██╔═══██╗██╔════╝╚══██╔══╝██║██╔════╝
-█████╔╝ ██╔██╗ ██║██║   ██║███████╗   ██║   ██║██║     
-██╔═██╗ ██║╚██╗██║██║   ██║╚════██║   ██║   ██║██║     
-██║  ██╗██║ ╚████║╚██████╔╝███████║   ██║   ██║╚██████╗
-╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝ ╚═════╝
-```
-
 # OpenClaw Telemetry Plugin
 
 **By [Knostic](https://knostic.ai/)**
@@ -14,6 +5,7 @@
 > **Observability for OpenClaw.** Capture every tool call, LLM request, and agent session — with built-in redaction, tamper-proof hash chains, syslog/SIEM forwarding, and rate limiting. Drop it in and know exactly what your agents are doing.
 
 Also check out:
+
 - **openclaw-detect:** https://github.com/knostic/openclaw-detect/
 - **Like what we do?** Knostic helps you with visibility and control of your coding agents and MCP/extensions, from Cursor and Claude Code, to Copilot.
 
@@ -28,24 +20,26 @@ Captures tool calls, LLM usage, agent lifecycle, and message events. Outputs to 
 ### 1. Install
 
 ```bash
-openclaw plugins install ./openclaw-telemetry
+openclaw plugins install ./openclaw-telemetry-hal
 ```
 
 Or copy manually:
+
 ```bash
-cp -R ./openclaw-telemetry ~/.openclaw/extensions/telemetry
+cp -R ./openclaw-telemetry-hal ~/.openclaw/extensions/telemetry-hal
 ```
 
 ### 2. Configure
 
-Via Control UI: **Settings → Config → plugins.entries.telemetry**
+Via Control UI: **Settings → Config → plugins.entries.telemetry-hal**
 
 Or edit `~/.openclaw/config.json`:
+
 ```json
 {
   "plugins": {
     "entries": {
-      "telemetry": {
+      "telemetry-hal": {
         "enabled": true,
         "config": {
           "enabled": true
@@ -74,34 +68,35 @@ openclaw plugins install @openclaw/telemetry
 
 ### Core Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enabled` | boolean | `false` | Enable telemetry capture |
-| `filePath` | string | `~/.openclaw/logs/telemetry.jsonl` | JSONL output file path |
+| Option     | Type    | Default                            | Description              |
+| ---------- | ------- | ---------------------------------- | ------------------------ |
+| `enabled`  | boolean | `false`                            | Enable telemetry capture |
+| `filePath` | string  | `~/.openclaw/logs/telemetry.jsonl` | JSONL output file path   |
 
 ### Syslog Output
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `syslog.enabled` | boolean | `false` | Enable syslog output |
-| `syslog.host` | string | required | Syslog server hostname |
-| `syslog.port` | number | `514` | Syslog server port |
-| `syslog.protocol` | string | `udp` | Transport: `udp`, `tcp`, or `tcp-tls` |
-| `syslog.format` | string | `cef` | Message format: `cef` or `json` |
-| `syslog.facility` | number | `16` | Syslog facility (16 = local0) |
-| `syslog.appName` | string | `openclaw` | App name in syslog messages |
+| Option            | Type    | Default    | Description                           |
+| ----------------- | ------- | ---------- | ------------------------------------- |
+| `syslog.enabled`  | boolean | `false`    | Enable syslog output                  |
+| `syslog.host`     | string  | required   | Syslog server hostname                |
+| `syslog.port`     | number  | `514`      | Syslog server port                    |
+| `syslog.protocol` | string  | `udp`      | Transport: `udp`, `tcp`, or `tcp-tls` |
+| `syslog.format`   | string  | `cef`      | Message format: `cef` or `json`       |
+| `syslog.facility` | number  | `16`       | Syslog facility (16 = local0)         |
+| `syslog.appName`  | string  | `openclaw` | App name in syslog messages           |
 
 ### Sensitive Data Redaction
 
 Automatically redacts sensitive data (API keys, tokens, passwords) from tool parameters before logging.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `redact.enabled` | boolean | `false` | Enable redaction |
-| `redact.patterns` | string[] | (built-in) | Regex patterns to match. Prefix with `(?i)` for case-insensitive |
-| `redact.replacement` | string | `[REDACTED]` | Replacement text |
+| Option               | Type     | Default      | Description                                                      |
+| -------------------- | -------- | ------------ | ---------------------------------------------------------------- |
+| `redact.enabled`     | boolean  | `false`      | Enable redaction                                                 |
+| `redact.patterns`    | string[] | (built-in)   | Regex patterns to match. Prefix with `(?i)` for case-insensitive |
+| `redact.replacement` | string   | `[REDACTED]` | Replacement text                                                 |
 
 Default patterns detect:
+
 - OpenAI keys (`sk-...`)
 - GitHub tokens (`ghp_...`, `gho_...`)
 - GitLab tokens (`glpat-...`)
@@ -114,31 +109,31 @@ Default patterns detect:
 
 Adds cryptographic hash chain to events for tamper detection. Each event includes `prevHash` and `hash` fields, forming a verifiable chain.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `integrity.enabled` | boolean | `false` | Enable hash chain |
-| `integrity.algorithm` | string | `sha256` | Hash algorithm |
+| Option                | Type    | Default  | Description       |
+| --------------------- | ------- | -------- | ----------------- |
+| `integrity.enabled`   | boolean | `false`  | Enable hash chain |
+| `integrity.algorithm` | string  | `sha256` | Hash algorithm    |
 
 ### Rate Limiting
 
 Prevents runaway agents from flooding outputs. Uses token bucket algorithm.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `rateLimit.enabled` | boolean | `false` | Enable rate limiting |
-| `rateLimit.maxEventsPerSecond` | number | `100` | Sustained event rate |
-| `rateLimit.burstSize` | number | `200` | Burst capacity |
+| Option                         | Type    | Default | Description          |
+| ------------------------------ | ------- | ------- | -------------------- |
+| `rateLimit.enabled`            | boolean | `false` | Enable rate limiting |
+| `rateLimit.maxEventsPerSecond` | number  | `100`   | Sustained event rate |
+| `rateLimit.burstSize`          | number  | `200`   | Burst capacity       |
 
 ### Log Rotation
 
 Rotates JSONL files to prevent unbounded growth.
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `rotate.enabled` | boolean | `false` | Enable rotation |
-| `rotate.maxSizeBytes` | number | `10485760` | Max file size (10MB) |
-| `rotate.maxFiles` | number | `5` | Rotated files to keep |
-| `rotate.compress` | boolean | `true` | Gzip rotated files |
+| Option                | Type    | Default    | Description           |
+| --------------------- | ------- | ---------- | --------------------- |
+| `rotate.enabled`      | boolean | `false`    | Enable rotation       |
+| `rotate.maxSizeBytes` | number  | `10485760` | Max file size (10MB)  |
+| `rotate.maxFiles`     | number  | `5`        | Rotated files to keep |
+| `rotate.compress`     | boolean | `true`     | Gzip rotated files    |
 
 ## Example Configurations
 
@@ -210,36 +205,63 @@ Rotates JSONL files to prevent unbounded growth.
 
 ## Events
 
-| Event | Description |
-|-------|-------------|
-| `tool.start` | Tool invocation started |
-| `tool.end` | Tool invocation completed (success/failure, duration) |
-| `message.in` | Inbound message received |
-| `message.out` | Outbound message sent |
-| `llm.usage` | LLM API call (tokens, cost, duration) |
-| `agent.start` | Agent session started |
-| `agent.end` | Agent session completed |
+| Event         | Description                                           |
+| ------------- | ----------------------------------------------------- |
+| `tool.start`  | Tool invocation started                               |
+| `tool.end`    | Tool invocation completed (success/failure, duration) |
+| `message.in`  | Inbound message received                              |
+| `message.out` | Outbound message sent                                 |
+| `llm.usage`   | LLM API call (tokens, cost, duration)                 |
+| `agent.start` | Agent session started                                 |
+| `agent.end`   | Agent session completed                               |
 
 ### JSONL Format
 
 Basic event:
+
 ```json
-{"type":"tool.start","toolName":"bash","params":{"cmd":"ls"},"sessionKey":"telegram:123","seq":1,"ts":1738517700000}
+{
+  "type": "tool.start",
+  "toolName": "bash",
+  "params": { "cmd": "ls" },
+  "sessionKey": "telegram:123",
+  "seq": 1,
+  "ts": 1738517700000
+}
 ```
 
 With integrity enabled:
+
 ```json
-{"type":"tool.start","toolName":"bash","params":{"cmd":"ls"},"seq":1,"ts":1738517700000,"prevHash":"0000000000000000000000000000000000000000000000000000000000000000","hash":"a1b2c3d4e5f6..."}
+{
+  "type": "tool.start",
+  "toolName": "bash",
+  "params": { "cmd": "ls" },
+  "seq": 1,
+  "ts": 1738517700000,
+  "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "hash": "a1b2c3d4e5f6..."
+}
 ```
 
 With redaction (before):
+
 ```json
-{"type":"tool.start","toolName":"bash","params":{"cmd":"curl -H 'Authorization: Bearer sk-abc123...'"}}
+{
+  "type": "tool.start",
+  "toolName": "bash",
+  "params": { "cmd": "curl -H 'Authorization: Bearer sk-abc123...'" }
+}
 ```
 
 With redaction (after):
+
 ```json
-{"type":"tool.start","toolName":"bash","params":{"cmd":"curl -H 'Authorization: [REDACTED]'"}}
+{
+  "type": "tool.start",
+  "toolName": "bash",
+  "params": { "cmd": "curl -H 'Authorization: [REDACTED]'" }
+}
 ```
 
 ### CEF Format (syslog)
@@ -285,12 +307,14 @@ jq 'select(.type=="tool.end" and .success==false)' ~/.openclaw/logs/telemetry.js
 ## Rotated Files
 
 When rotation is enabled, files are named:
+
 - `telemetry.jsonl` - current file
 - `telemetry.jsonl.1.gz` - most recent rotated (compressed)
 - `telemetry.jsonl.2.gz` - older
 - ...up to `maxFiles`
 
 To read compressed logs:
+
 ```bash
 zcat ~/.openclaw/logs/telemetry.jsonl.1.gz | jq .
 ```
@@ -298,11 +322,13 @@ zcat ~/.openclaw/logs/telemetry.jsonl.1.gz | jq .
 ## SIEM Integration
 
 The file-based output works with log shippers:
+
 - **Filebeat**: Configure a `filestream` input pointing to the JSONL file
 - **Fluentd**: Use `in_tail` with JSON parser
 - **Splunk Universal Forwarder**: Monitor the file path
 
 The syslog output connects directly to:
+
 - Splunk (syslog input)
 - QRadar (CEF supported natively)
 - ArcSight (CEF supported natively)
