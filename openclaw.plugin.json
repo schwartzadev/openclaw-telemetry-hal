@@ -1,5 +1,5 @@
 {
-  "id": "telemetry",
+  "id": "telemetry-hal",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
