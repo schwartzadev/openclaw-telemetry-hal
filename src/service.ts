@@ -1,4 +1,3 @@
-import type { OpenClawPluginService } from "openclaw/plugin-sdk";
 import { onDiagnosticEvent } from "openclaw/plugin-sdk";
 import { createIntegrityChain } from "./integrity.js";
 import { createRateLimiter } from "./ratelimit.js";
@@ -10,6 +9,23 @@ import type {
   TelemetryEventInput,
 } from "./types.js";
 import { createTelemetryWriter, type TelemetryWriter } from "./writer.js";
+
+/**
+ * Minimal local interface matching the OpenClawPluginService contract.
+ *
+ * The canonical type lives in openclaw's internal plugin types but is not
+ * re-exported from the public `openclaw/plugin-sdk` barrel, so we define a
+ * structurally-compatible substitute here.
+ */
+type OpenClawPluginService = {
+  id: string;
+  start: (ctx: {
+    config: Record<string, unknown> & { plugins?: { entries?: Record<string, { config?: unknown }> } };
+    stateDir: string;
+    logger: { info: (msg: string) => void };
+  }) => void | Promise<void>;
+  stop?: () => void | Promise<void>;
+};
 
 export type TelemetryService = OpenClawPluginService & {
   write: (evt: TelemetryEventInput) => void;

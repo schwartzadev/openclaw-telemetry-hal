@@ -1,9 +1,15 @@
 import { createHash } from "node:crypto";
 import type { IntegrityConfig, TelemetryEvent } from "./types.js";
 
-export function createIntegrityChain(config: IntegrityConfig = {}) {
+export type IntegrityChain = {
+  sign: (evt: TelemetryEvent) => TelemetryEvent;
+};
+
+export function createIntegrityChain(
+  config: IntegrityConfig = {},
+): IntegrityChain {
   if (!config.enabled) {
-    return { sign: <T>(evt: T): T => evt };
+    return { sign: (evt: TelemetryEvent): TelemetryEvent => evt };
   }
 
   const algorithm = config.algorithm ?? "sha256";
@@ -17,7 +23,7 @@ export function createIntegrityChain(config: IntegrityConfig = {}) {
   }
 
   return {
-    sign: <T extends TelemetryEvent>(evt: T): T & { prevHash: string; hash: string } => {
+    sign: (evt: TelemetryEvent): TelemetryEvent => {
       const hash = computeHash(evt, prevHash);
       const signed = { ...evt, prevHash, hash };
       prevHash = hash;

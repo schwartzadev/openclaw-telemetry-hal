@@ -23,13 +23,24 @@ export type TelemetryMessageInEvent = TelemetryEventBase & {
   type: "message.in";
   channel: string;
   from: string;
-  contentLength: number;
+  content?: string;
+  contentLength?: number;
+  timestamp?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type TelemetryMessageSendingEvent = TelemetryEventBase & {
+  type: "message.sending";
+  channel: string;
+  to: string;
+  content?: string;
 };
 
 export type TelemetryMessageOutEvent = TelemetryEventBase & {
   type: "message.out";
   channel: string;
   to: string;
+  content?: string;
   success: boolean;
   error?: string;
 };
@@ -47,11 +58,14 @@ export type TelemetryLlmUsageEvent = TelemetryEventBase & {
 
 export type TelemetryAgentStartEvent = TelemetryEventBase & {
   type: "agent.start";
-  promptLength: number;
+  prompt?: string;
+  promptLength?: number;
+  messages?: unknown[];
 };
 
 export type TelemetryAgentEndEvent = TelemetryEventBase & {
   type: "agent.end";
+  messages?: unknown[];
   success: boolean;
   durationMs?: number;
   error?: string;
@@ -61,6 +75,7 @@ export type TelemetryEvent =
   | TelemetryToolStartEvent
   | TelemetryToolEndEvent
   | TelemetryMessageInEvent
+  | TelemetryMessageSendingEvent
   | TelemetryMessageOutEvent
   | TelemetryLlmUsageEvent
   | TelemetryAgentStartEvent
