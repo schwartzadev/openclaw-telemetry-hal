@@ -1,15 +1,17 @@
-# OpenClaw Telemetry Plugin
+# Quickstart
 
-**By [Knostic](https://knostic.ai/)**
 
-> **Observability for OpenClaw.** Capture every tool call, LLM request, and agent session — with built-in redaction, tamper-proof hash chains, syslog/SIEM forwarding, and rate limiting. Drop it in and know exactly what your agents are doing.
+```
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+source /Users/administrator/.zshrc
+pnpm install
+pnpm run build
+openclaw plugins install .
+# NB: update the openclaw.json file
+```
 
-Also check out:
 
-- **openclaw-detect:** https://github.com/knostic/openclaw-detect/
-- **Like what we do?** Knostic helps you with visibility and control of your coding agents and MCP/extensions, from Cursor and Claude Code, to Copilot.
-
----
+Forked from OpenClaw Telemetry Plugin by [Knostic](https://knostic.ai/).
 
 # OpenClaw Telemetry Plugin - TL;DR
 
@@ -17,23 +19,33 @@ Captures tool calls, LLM usage, agent lifecycle, and message events. Outputs to 
 
 ## Quick Start
 
-### 1. Install
+### 1. Build
 
 ```bash
-openclaw plugins install ./openclaw-telemetry-hal
+cd openclaw-telemetry-hal
+pnpm install
+pnpm run build
 ```
 
-Or copy manually:
+The plugin is authored in TypeScript, but installed OpenClaw plugins must expose compiled JavaScript. Both `openclaw.extensions` and `openclaw.runtimeExtensions` point at `./dist/index.js`.
+
+### 2. Install
 
 ```bash
-cp -R ./openclaw-telemetry-hal ~/.openclaw/extensions/telemetry-hal
+openclaw plugins install .
 ```
 
-### 2. Configure
+This installs the compiled plugin under:
+
+```bash
+~/.openclaw/extensions/telemetry-hal
+```
+
+### 3. Configure
 
 Via Control UI: **Settings → Config → plugins.entries.telemetry-hal**
 
-Or edit `~/.openclaw/config.json`:
+Or edit `~/.openclaw/openclaw.json`:
 
 ```json
 {
@@ -50,19 +62,59 @@ Or edit `~/.openclaw/config.json`:
 }
 ```
 
-### 3. Restart Gateway
+### 4. Restart Gateway
 
 ```bash
-openclaw gateway
+openclaw gateway restart
 ```
 
 Logs write to `~/.openclaw/logs/telemetry.jsonl` by default.
 
-### Coming Soon
+### 5. Verify
 
 ```bash
-openclaw plugins install @openclaw/telemetry
+openclaw plugins inspect telemetry-hal
+openclaw plugins list | grep telemetry-hal
+ls -l ~/.openclaw/logs/telemetry.jsonl
+tail -f ~/.openclaw/logs/telemetry.jsonl
 ```
+
+`openclaw plugins inspect telemetry-hal` should report `Status: loaded` and `Source: ~/.openclaw/extensions/telemetry-hal/dist/index.js`.
+
+### Packaged install
+
+```bash
+openclaw plugins install @openclaw/telemetry-hal
+```
+
+The package is prepared with `prepack`, so `npm pack` and published installs include the compiled `dist/` output.
+
+## Development
+
+Useful commands:
+
+```bash
+npm install
+npm run build
+npm pack --dry-run
+node -e "import('./dist/index.js').then(m => console.log(m.default?.id, typeof m.default?.register))"
+```
+
+Expected import check:
+
+```text
+telemetry-hal function
+```
+
+After changing source files, rebuild and reinstall:
+
+```bash
+npm run build
+openclaw plugins install .
+openclaw gateway restart
+```
+
+Do not point `openclaw.extensions` or `openclaw.runtimeExtensions` at `./index.ts` for an installed plugin. TypeScript source fallback is only for source checkouts/local development paths; packaged installs need `./dist/index.js`.
 
 ## Configuration
 
@@ -142,8 +194,13 @@ Rotates JSONL files to prevent unbounded growth.
 ```json
 {
   "plugins": {
-    "telemetry": {
-      "enabled": true
+    "entries": {
+      "telemetry-hal": {
+        "enabled": true,
+        "config": {
+          "enabled": true
+        }
+      }
     }
   }
 }
@@ -154,29 +211,34 @@ Rotates JSONL files to prevent unbounded growth.
 ```json
 {
   "plugins": {
-    "telemetry": {
-      "enabled": true,
-      "redact": {
-        "enabled": true
-      },
-      "integrity": {
-        "enabled": true
-      },
-      "rateLimit": {
+    "entries": {
+      "telemetry-hal": {
         "enabled": true,
-        "maxEventsPerSecond": 50
-      },
-      "rotate": {
-        "enabled": true,
-        "maxSizeBytes": 52428800,
-        "maxFiles": 10
-      },
-      "syslog": {
-        "enabled": true,
-        "host": "siem.company.com",
-        "port": 6514,
-        "protocol": "tcp-tls",
-        "format": "cef"
+        "config": {
+          "enabled": true,
+          "redact": {
+            "enabled": true
+          },
+          "integrity": {
+            "enabled": true
+          },
+          "rateLimit": {
+            "enabled": true,
+            "maxEventsPerSecond": 50
+          },
+          "rotate": {
+            "enabled": true,
+            "maxSizeBytes": 52428800,
+            "maxFiles": 10
+          },
+          "syslog": {
+            "enabled": true,
+            "host": "siem.company.com",
+            "port": 6514,
+            "protocol": "tcp-tls",
+            "format": "cef"
+          }
+        }
       }
     }
   }
@@ -188,15 +250,20 @@ Rotates JSONL files to prevent unbounded growth.
 ```json
 {
   "plugins": {
-    "telemetry": {
-      "enabled": true,
-      "redact": {
+    "entries": {
+      "telemetry-hal": {
         "enabled": true,
-        "patterns": [
-          "(?i)internal-secret-[a-z0-9]+",
-          "COMPANY-[A-Z]{4}-[0-9]{8}"
-        ],
-        "replacement": "***"
+        "config": {
+          "enabled": true,
+          "redact": {
+            "enabled": true,
+            "patterns": [
+              "(?i)internal-secret-[a-z0-9]+",
+              "COMPANY-[A-Z]{4}-[0-9]{8}"
+            ],
+            "replacement": "***"
+          }
+        }
       }
     }
   }
@@ -210,6 +277,7 @@ Rotates JSONL files to prevent unbounded growth.
 | `tool.start`  | Tool invocation started                               |
 | `tool.end`    | Tool invocation completed (success/failure, duration) |
 | `message.in`  | Inbound message received                              |
+| `message.sending` | Outbound message about to send                   |
 | `message.out` | Outbound message sent                                 |
 | `llm.usage`   | LLM API call (tokens, cost, duration)                 |
 | `agent.start` | Agent session started                                 |
@@ -335,6 +403,31 @@ The syslog output connects directly to:
 - Elastic SIEM (via Logstash syslog input)
 - Any RFC 5424 compliant collector
 
-- ## License
+## Troubleshooting
+
+### Plugin is enabled but no `telemetry.jsonl` appears
+
+Check the plugin is loaded from compiled JavaScript:
+
+```bash
+openclaw plugins inspect telemetry-hal
+```
+
+Expected:
+
+```text
+Status: loaded
+Source: ~/.openclaw/extensions/telemetry-hal/dist/index.js
+```
+
+Then check gateway logs:
+
+```bash
+grep -i telemetry ~/.openclaw/logs/gateway.log /tmp/openclaw/openclaw-$(date +%F).log
+```
+
+If the plugin is loaded but no file is created, verify the plugin service lifecycle and hook names against the installed OpenClaw version. The file writer is initialized by the `telemetry-hal` service `start(...)` method, and events are emitted by the registered OpenClaw hooks.
+
+## License
 
 Apache 2.0 — see LICENSE for details.
