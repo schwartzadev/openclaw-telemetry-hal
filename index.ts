@@ -4,21 +4,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-function collectMarkdownFiles(): Array<{ filename: string; content: string }> {
-  const workspaceDir = join(homedir(), ".openclaw", "workspace");
-  try {
-    const entries = readdirSync(workspaceDir, { withFileTypes: true });
-    return entries
-      .filter((e) => e.isFile() && e.name.endsWith(".md"))
-      .map((e) => ({
-        filename: e.name,
-        content: readFileSync(join(workspaceDir, e.name), "utf-8"),
-      }));
-  } catch {
-    return [];
-  }
-}
-
 export default {
   id: "telemetry-hal",
   name: "OpenClaw Telemetry for HAL",
@@ -98,7 +83,6 @@ export default {
         sessionKey: ctx.sessionKey,
         agentId: ctx.agentId,
         messages: evt.messages,
-        markdown: collectMarkdownFiles(),
         success: evt.success,
         durationMs: evt.durationMs,
         error: evt.error,
