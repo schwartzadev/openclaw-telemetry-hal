@@ -35,31 +35,50 @@ export function createTelemetryService(): TelemetryService {
   let fileWriter: TelemetryWriter | null = null;
   let syslogWriter: SyslogWriter | null = null;
   let unsubDiag: (() => void) | null = null;
+  let logger: { info: (msg: string) => void } | null = null;
   let redactor = createRedactor();
   let integrity = createIntegrityChain();
   let rateLimiter = createRateLimiter();
   let seq = 0;
 
   const writeEvent = (evt: TelemetryEventInput) => {
-    if (!rateLimiter.allow()) {
-      return;
-    }
-    const redacted = redactor.redact(evt);
-    const enriched: TelemetryEvent = {
-      ...redacted,
-      seq: ++seq,
-      ts: Date.now(),
-    } as TelemetryEvent;
-    const signed = integrity.sign(enriched);
+    try {
+      if (!rateLimiter.allow()) {
+        return;
+      }
+      const redacted = redactor.redact(evt);
+      const enriched: TelemetryEvent = {
+        ...redacted,
+        seq: ++seq,
+        ts: Date.now(),
+      } as TelemetryEvent;
+      const signed = integrity.sign(enriched);
 
-    fileWriter?.write(signed);
-    syslogWriter?.write(signed);
+      fileWriter?.write(signed);
+      syslogWriter?.write(signed);
+    } catch (error) {
+      try {
+        const fallback = {
+          type: "telemetry.error",
+          seq: ++seq,
+          ts: Date.now(),
+          error:
+            error instanceof Error
+              ? `${error.name}: ${error.message}`
+              : String(error),
+          sourceType: (evt as { type?: string })?.type ?? "unknown",
+        };
+        fileWriter?.write(fallback);
+      } catch {}
+      logger?.info("telemetry: write error (captured)");
+    }
   };
 
   return {
     id: "telemetry-hal",
     write: writeEvent,
     async start(ctx) {
+      logger = ctx.logger;
       const cfg = ctx.config.plugins?.entries?.['telemetry-hal']?.config as
         | TelemetryConfig
         | undefined;
@@ -110,6 +129,7 @@ export function createTelemetryService(): TelemetryService {
     async stop() {
       unsubDiag?.();
       unsubDiag = null;
+      logger = null;
       await fileWriter?.flush();
       fileWriter = null;
       await syslogWriter?.close();

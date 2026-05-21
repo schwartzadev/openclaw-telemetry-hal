@@ -6,8 +6,9 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 source /Users/administrator/.zshrc
 pnpm install
 pnpm run build
-openclaw plugins install .
+openclaw plugins install --link .
 # NB: update the openclaw.json file
+openclaw gateway restart
 ```
 
 
@@ -54,9 +55,13 @@ Or edit `~/.openclaw/openclaw.json`:
       "telemetry-hal": {
         "enabled": true,
         "config": {
-          "enabled": true
+          "enabled": true,
+          "filePath": "/Users/administrator/.openclaw/logs/telemetry.jsonl"
+        },
+        "hooks": {
+          "allowConversationAccess": true
         }
-      }
+      },
     }
   }
 }

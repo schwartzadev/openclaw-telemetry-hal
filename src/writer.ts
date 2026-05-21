@@ -8,6 +8,22 @@ export type TelemetryWriter = {
   flush: () => Promise<void>;
 };
 
+function safeSerialize(evt: object): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(evt, (_key, value) => {
+    if (typeof value === "bigint") {
+      return value.toString();
+    }
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
 export function createTelemetryWriter(filePath: string, rotateConfig?: RotateConfig): TelemetryWriter {
   let queue: string[] = [];
   let flushing = false;
@@ -24,6 +40,10 @@ export function createTelemetryWriter(filePath: string, rotateConfig?: RotateCon
       const data = batch.join("");
       await appendFile(filePath, data);
       rotator.trackWrite(Buffer.byteLength(data, "utf8"));
+    } catch {
+      // Preserve events if disk write fails so a later retry can recover.
+      queue = batch.concat(queue);
+      await new Promise((r) => setTimeout(r, 100));
     } finally {
       flushing = false;
     }
@@ -34,7 +54,7 @@ export function createTelemetryWriter(filePath: string, rotateConfig?: RotateCon
 
   return {
     write(evt: object) {
-      const line = JSON.stringify(evt) + "\n";
+      const line = safeSerialize(evt) + "\n";
       queue.push(line);
       if (!flushing) {
         void doFlush();
