@@ -22,7 +22,7 @@ describe("TelemetryService", () => {
   test("does not write when disabled", async () => {
     const svc = createTelemetryService();
     await svc.start({
-      config: { plugins: { entries: { telemetry: { config: { enabled: false } } } } },
+      config: { plugins: { entries: { "telemetry-hal": { config: { enabled: false } } } } },
       stateDir: TEST_DIR,
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     });
@@ -37,7 +37,7 @@ describe("TelemetryService", () => {
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     await svc.start({
-      config: { plugins: { entries: { telemetry: { config: { enabled: true, filePath } } } } },
+      config: { plugins: { entries: { "telemetry-hal": { config: { enabled: true, filePath } } } } },
       stateDir: TEST_DIR,
       logger,
     });
@@ -66,7 +66,7 @@ describe("TelemetryService", () => {
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
     await svc.start({
-      config: { plugins: { entries: { telemetry: { config: { enabled: true } } } } },
+      config: { plugins: { entries: { "telemetry-hal": { config: { enabled: true } } } } },
       stateDir: TEST_DIR,
       logger,
     });
@@ -77,5 +77,107 @@ describe("TelemetryService", () => {
     const defaultPath = join(TEST_DIR, "logs", "telemetry.jsonl");
     const content = await readFile(defaultPath, "utf-8");
     expect(content).toContain('"type":"agent.start"');
+  });
+
+  test("redacts on the started path by default (no redact config)", async () => {
+    const filePath = join(TEST_DIR, "logs", "telemetry.jsonl");
+    const svc = createTelemetryService();
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+    await svc.start({
+      config: { plugins: { entries: { "telemetry-hal": { config: { enabled: true, filePath } } } } },
+      stateDir: TEST_DIR,
+      logger,
+    });
+
+    svc.write({
+      type: "tool.start",
+      toolName: "bash",
+      params: { cmd: "export TOKEN=sk-ant-api03-" + "a".repeat(40) },
+    });
+    await svc.stop?.({} as never);
+
+    const content = await readFile(filePath, "utf-8");
+    expect(content).not.toContain("sk-ant-api03-");
+    expect(content).toContain("[REDACTED]");
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("redaction enabled"));
+  });
+
+  test("keeps default patterns when config.redact.patterns is uncompilable", async () => {
+    const filePath = join(TEST_DIR, "logs", "telemetry.jsonl");
+    const svc = createTelemetryService();
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+    await svc.start({
+      config: {
+        plugins: {
+          entries: {
+            "telemetry-hal": { config: { enabled: true, filePath, redact: { patterns: ["("] } } },
+          },
+        },
+      },
+      stateDir: TEST_DIR,
+      logger,
+    });
+
+    // a bad pattern must not take the pipeline down: the default patterns still redact
+    svc.write({ type: "tool.start", toolName: "bash", params: { key: "ghp_" + "a".repeat(36) } });
+    await svc.stop?.({} as never);
+
+    const content = await readFile(filePath, "utf-8");
+    expect(content).toContain("[REDACTED]");
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("using default patterns"));
+  });
+
+  test("does not redact when redaction is explicitly disabled", async () => {
+    const filePath = join(TEST_DIR, "logs", "telemetry.jsonl");
+    const svc = createTelemetryService();
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+    await svc.start({
+      config: {
+        plugins: {
+          entries: {
+            "telemetry-hal": { config: { enabled: true, filePath, redact: { enabled: false } } },
+          },
+        },
+      },
+      stateDir: TEST_DIR,
+      logger,
+    });
+
+    svc.write({ type: "tool.start", toolName: "bash", params: { key: "ghp_" + "z".repeat(36) } });
+    await svc.stop?.({} as never);
+
+    const content = await readFile(filePath, "utf-8");
+    expect(content).toContain("ghp_" + "z".repeat(36));
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("redaction DISABLED"));
+  });
+
+  test("reports start state and usage source through the accessors", async () => {
+    const svc = createTelemetryService();
+    expect(svc.isStarted()).toBe(false);
+    expect(svc.usageSource()).toBe("none");
+    expect(svc.busDeliversUsage()).toBe(false);
+
+    await svc.start({
+      config: { plugins: { entries: { "telemetry-hal": { config: { enabled: true } } } } },
+      stateDir: TEST_DIR,
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    });
+
+    expect(svc.isStarted()).toBe(true);
+    // usageSource is environment-dependent: "internal" when the
+    // diagnostic-runtime subpath resolves, "public" when only the public
+    // listener could be installed. Whichever it is, it must not be "none" once
+    // started, and busDeliversUsage must agree with it.
+    const source = svc.usageSource();
+    expect(source).not.toBe("none");
+    expect(svc.busDeliversUsage()).toBe(source === "internal" || source === "public-live");
+
+    await svc.stop?.({} as never);
+    expect(svc.isStarted()).toBe(false);
+    expect(svc.usageSource()).toBe("none");
+    expect(svc.busDeliversUsage()).toBe(false);
   });
 });

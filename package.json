@@ -4,14 +4,18 @@
   "description": "HAL-modified OpenClaw telemetry plugin - captures tool calls, LLM usage, and message events to JSONL",
   "type": "module",
   "main": "./dist/index.js",
+  "packageManager": "pnpm@11.5.0",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepack": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^25.8.0",
     "openclaw": "^2026.5.18",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.0"
   },
   "openclaw": {
     "extensions": [
