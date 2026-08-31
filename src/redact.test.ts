@@ -81,4 +81,34 @@ describe("createRedactor", () => {
     const input = { count: 42, active: true, empty: null };
     expect(r.redact(input)).toEqual({ count: 42, active: true, empty: null });
   });
+
+  describe("default patterns learned from the harness key shapes", () => {
+    const r = createRedactor({ enabled: true });
+    const cases: Array<[string, string]> = [
+      ["Anthropic key", "sk-ant-api03-" + "a".repeat(40)],
+      ["OpenAI project key", "sk-proj-" + "b".repeat(40)],
+      ["OpenRouter key", "sk-or-v1-" + "0".repeat(64)],
+      ["classic GitHub PAT", "github_pat_" + "c".repeat(60)],
+      ["RunPod key", "rpa_" + "D".repeat(24)],
+      ["Telegram bot token", "123456789:AA" + "e".repeat(33)],
+      ["AWS access key id", "AKIA" + "0123456789ABCDEF"],
+      ["HuggingFace token", "hf_" + "f".repeat(34)],
+    ];
+    test.each(cases)("redacts %s", (_label, secret) => {
+      expect(r.redact({ v: secret })).toEqual({ v: "[REDACTED]" });
+    });
+
+    test("redacts a PEM private key block", () => {
+      const pem =
+        "-----BEGIN RSA PRIVATE KEY-----\nMIIabc123\n-----END RSA PRIVATE KEY-----";
+      expect(r.redact({ key: pem }).key).toBe("[REDACTED]");
+    });
+
+    test("redacts a labelled 40-64 hex credential but leaves a bare hex run", () => {
+      const hex = "a".repeat(48);
+      expect(r.redact({ v: `--token ${hex}` }).v).toContain("[REDACTED]");
+      // a bare hex run (git sha shape) carries no credential label, so it stays
+      expect(r.redact({ v: hex }).v).toBe(hex);
+    });
+  });
 });
